@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DaDerpGame</title>
+<meta name="description" content="DaDerpGame: AI Slop but funni. A cursed browser block game with floating islands, castles, tanks and a horse named Count.">
+<meta name="theme-color" content="#ff9a3c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=DM+Mono:wght@400;500&family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+
+<canvas id="game"></canvas>
+<div id="esp"></div>
+<div id="hurt"></div>
+<div id="crosshair"></div>
+<div id="mine-ring"></div>
+<div id="hint"></div>
+<div id="hud-top">
+  <span class="brand">DaDerpGame</span>
+  <span class="stat" id="stat-clock"></span>
+  <span class="stat" id="stat-pos">x 0 · y 0 · z 0</span>
+  <span class="stat" id="stat-look">looking at: the void</span>
+  <span class="stat esp" id="stat-esp"></span>
+</div>
+<div id="save-status"></div>
+<div id="boss" hidden><div id="boss-name"></div><div id="boss-bar"><div id="boss-fill"></div></div></div>
+<div id="noise" hidden><span id="noise-lbl">noise</span><div class="bar"><div id="noise-fill"></div></div></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="trick"></div>
+<div id="ammo" hidden><span id="ammo-n">30</span><small id="ammo-sub">Slop-47 · R to reload</small></div>
+<div id="bottom">
+  <div id="held-name"></div>
+  <div id="bars"><div class="icons" id="hearts"></div><div class="icons" id="armor-bar"></div></div>
+  <div id="hotbar"></div>
+</div>
+
+<div id="touch">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button id="t-break">Hit</button><button id="t-use">Use</button><button id="t-bag">Bag</button>
+    <button id="t-crouch">Crouch</button><button id="t-skate">Skate</button><button id="t-view">View</button>
+    <button id="t-pause">Pause</button><button id="t-jump" class="wide" style="grid-column: span 2">Jump</button>
+  </div>
+</div>
+
+<div class="ui-wrap" id="inv-wrap" hidden>
+  <div class="mc-panel" id="inv" role="dialog" aria-label="Inventory">
+    <div class="inv-top">
+      <div class="armor-col" id="armor-col"></div>
+      <div class="preview"><canvas id="preview" width="16" height="32"></canvas><span>this is you<br>(probably)</span></div>
+      <div class="craft-area">
+        <div>Crafting (5×5)</div>
+        <div class="craft-row"><div class="grid5" id="craft-grid"></div><div class="arrow">→</div><div id="out-wrap"></div></div>
+        <div id="inv-stats"></div>
+      </div>
+    </div>
+    <div>Inventory</div>
+    <div class="grid9" id="main-grid"></div>
+    <div class="grid9 hb" id="inv-hotbar"></div>
+    <div class="inv-foot">
+      <span class="mouse-only">right click: split · shift click: quick move / wear</span>
+      <button class="mc-btn touch-only" id="split-btn">Split: off</button>
+      <button class="mc-btn" id="inv-close">Done (E)</button>
+    </div>
+  </div>
+</div>
+<div class="ui-wrap" id="book-wrap" hidden>
+  <div class="mc-panel" id="book" role="dialog" aria-label="Recipe book">
+    <h3>The Big Book of Slop Recipes</h3>
+    <div id="book-list"></div>
+    <div class="inv-foot"><span>shapes can sit anywhere in the 5×5 grid</span><button class="mc-btn" id="book-close">Close (E)</button></div>
+  </div>
+</div>
+<div id="cursor-stack"></div>
+
+
+<div class="mc-screen" id="title-screen" hidden>
+  <div class="logo-wrap">
+    <h1 class="logo" id="logo" aria-label="DaDerpGame"></h1>
+    <span class="edition">SLOP EDITION</span>
+    <span class="splash" id="splash">AI Slop but funni 😂🎉</span>
+  </div>
+  <div class="mc-col">
+    <button class="mc-b" id="m-single" style="--tilt:-0.6deg"><span class="main">Singelplayer</span><span class="alt">Just You</span></button>
+    <button class="mc-b" id="m-multi" style="--tilt:0.8deg"><span class="main">Multiplayer</span><span class="alt">Still Just You</span></button>
+    <button class="mc-b" id="m-realms" style="--tilt:-1.1deg"><span class="main">DaDerp Realms</span><span class="alt">$0.00/month (it does nothing)</span></button>
+    <div class="mc-row">
+      <button class="mc-b" id="m-options" style="--tilt:0.5deg"><span class="main">Opshuns...</span><span class="alt">Settings?</span></button>
+      <button class="mc-b" id="m-quit" style="--tilt:-0.4deg"><span class="main">Quit Game</span><span class="alt">don't</span></button>
+    </div>
+  </div>
+  <div class="mc-foot l">DaDerpGame 0.4.1 (Slop Edition)</div>
+  <div class="mc-foot r">Copyright Nobody. Do not distribute! (please distribute)</div>
+</div>
+
+<div class="mc-screen dim" id="worlds-screen" hidden>
+  <h2>Select World</h2>
+  <div class="mc-field mc-search"><input id="world-search" type="text" placeholder="Search... (it won't help)" aria-label="Search worlds"></div>
+  <div class="mc-list" id="world-list" role="listbox" aria-label="Your worlds"></div>
+  <p class="mc-note" id="store-note"></p>
+  <div class="mc-col" style="width:min(620px,100%)">
+    <div class="mc-row">
+      <button class="mc-b" id="w-play" disabled>Play Selected World</button>
+      <button class="mc-b" id="w-new">Create New World</button>
+    </div>
+    <div class="mc-row">
+      <button class="mc-b danger" id="w-delete" disabled>Delete</button>
+      <button class="mc-b" id="w-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="mc-screen dim" id="create-screen" hidden>
+  <h2>Create New World</h2>
+  <label class="mc-field" for="new-name">World Name<input id="new-name" type="text" maxlength="40" placeholder="New Slop World"></label>
+  <label class="mc-field" for="new-seed">Seed for the World Generator<input id="new-seed" type="text" maxlength="30"><small>Leave blank for a random seed. Type words. The world will judge them.</small></label>
+  <div class="mc-col">
+    <button class="mc-b" id="c-mode">Game Mode: Slurvival</button>
+    <p class="mc-note" id="c-mode-note">Gather stuff, craft stuff, get stolen from by a horse.</p>
+    <div class="mc-row">
+      <button class="mc-b" id="create">Create New World</button>
+      <button class="mc-b" id="c-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="mc-screen dim" id="delete-screen" hidden>
+  <h2>Are you sure you want to delete this world?</h2>
+  <p class="mc-text">'<span id="del-name"></span>' will be lost forever! <span class="warn">(A long time! Like, 3 business days.)</span></p>
+  <div class="mc-col"><div class="mc-row"><button class="mc-b danger" id="d-yes">Delete</button><button class="mc-b" id="d-no">Cancel</button></div></div>
+</div>
+
+<div class="mc-screen dim" id="msg-screen" hidden>
+  <h2 id="msg-title">Play Multiplayer</h2>
+  <p class="mc-text" id="msg-text"></p>
+  <div class="mc-col"><button class="mc-b" id="msg-back">Back</button></div>
+</div>
+
+<div class="mc-screen dim" id="options-screen" hidden>
+  <h2>Opshuns</h2>
+  <div class="mc-col">
+    <div class="mc-row"><button class="mc-b" id="o-rd">Render Distance: 5</button><button class="mc-b" id="o-fov">FOV: 75</button></div>
+    <div class="mc-row"><button class="mc-b" id="o-mud">Mud: Yes</button><button class="mc-b" id="o-music">Music: None</button></div>
+    <div class="mc-row"><button class="mc-b" id="o-sens">Mouse: Normal</button><button class="mc-b" id="o-diff">Difficulty: Derp</button></div>
+    <p class="mc-note" id="o-note">Render distance makes things far away exist. Higher is prettier and slower.</p>
+    <button class="mc-b" id="o-done">Done</button>
+  </div>
+</div>
+
+<div class="mc-screen dim" id="card-wrap" hidden>
+  <h2>Game Menu <span style="color:#a0a0a0">(paused, emotionally)</span></h2>
+  <p class="world-name" id="world-title"></p>
+  <div class="mc-col">
+    <button class="mc-b" id="play">Back to Game</button>
+    <div class="mc-row"><button class="mc-b" id="p-options">Opshuns...</button><button class="mc-b" id="p-controls">Controls</button></div>
+    <dl class="mc-controls" id="controls-list" hidden>
+      <dt>WASD / Space</dt><dd>walk, jump, swim up, climb vines</dd>
+      <dt>Tab / Shift</dt><dd>sprint / crouch (no falling off edges)</dd>
+      <dt>Left click</dt><dd>mine, hit, shoot, fire vehicle weapons</dd>
+      <dt>Right click</dt><dd>place, eat, open chests, trade, ride, Chicken Cannon</dd>
+      <dt>E</dt><dd>inventory and 5×5 crafting</dd>
+      <dt>P</dt><dd>skateboard</dd>
+      <dt>F5 or V</dt><dd>camera view</dd>
+      <dt>R</dt><dd>reload</dd>
+    </dl>
+    <button class="mc-b" id="quit">Save and Quit to Title</button>
+  </div>
+</div>
+
+<div class="mc-screen blood" id="death-wrap" hidden>
+  <div class="big-death">You Died!</div>
+  <p class="mc-text" id="death-msg">skill issue.</p>
+  <p class="mc-text">Score: <span id="death-score" style="color:#ffff3c">0</span></p>
+  <div class="mc-col">
+    <button class="mc-b" id="respawn-btn">Respawn</button>
+    <button class="mc-b" id="death-title">Title Screen</button>
+  </div>
+</div>
+
+<div id="loading" hidden><p id="loading-msg">Generating terrain…</p><div class="bar"><div class="fill" id="loading-fill"></div></div><small id="loading-tip"></small></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
